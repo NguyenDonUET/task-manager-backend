@@ -5,10 +5,9 @@ const { CustomError } = require("./error-handler")
 
 const authenticateUser = async (req, res, next) => {
   const { refreshToken } = req.cookies
-  console.log("🚀 ~ authenticateUser ~ refreshToken:", refreshToken)
 
   if (!refreshToken) {
-    throw new CustomError(StatusCodes.UNAUTHORIZED, "Authentication Invalid")
+    throw new CustomError(StatusCodes.UNAUTHORIZED, "No token provided")
   }
   try {
     isTokenValid(refreshToken, process.env.JWT_REFRESH_TOKEN_SECRET)
@@ -17,7 +16,7 @@ const authenticateUser = async (req, res, next) => {
     let accessToken = ""
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      throw new CustomError(StatusCodes.UNAUTHORIZED, "Authentication Invalid")
+      throw new CustomError(StatusCodes.UNAUTHORIZED, "Access token is invalid")
     }
     accessToken = authHeader.substring(7)
 

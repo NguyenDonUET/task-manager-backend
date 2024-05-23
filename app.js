@@ -3,10 +3,7 @@ require("express-async-errors")
 const cors = require("cors")
 const express = require("express")
 const cookieParser = require("cookie-parser")
-const {
-  errorHandlerMiddleware,
-  CustomError,
-} = require("./middlewares/error-handler")
+const { errorHandlerMiddleware } = require("./middlewares/error-handler")
 const connectDB = require("./db/connect")
 
 //  routers
@@ -19,7 +16,7 @@ app.use(cookieParser(process.env.JWT_REFRESH_TOKEN_SECRET))
 app.use(express.urlencoded({ extended: false }))
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: "*",
     credentials: true,
   })
 )
