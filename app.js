@@ -20,7 +20,7 @@ app.use(
     origin: [
       "http://localhost:3000",
       "http://localhost:4173",
-      "https://task-manager-nguyendonuet.netlify.app/",
+      "https://task-manager-nguyendonuet.netlify.app",
     ],
     credentials: true,
   })
