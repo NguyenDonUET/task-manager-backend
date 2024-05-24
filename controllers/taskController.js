@@ -23,7 +23,7 @@ const getTasks = async (req, res) => {
   if (!page || !limit) {
     throw new CustomError(StatusCodes.BAD_REQUEST, "page, limit is required")
   }
-  const allTasks = await Task.find({})
+  const allTasks = await Task.find({ userId: req.user.userId })
 
   const tasks = await Task.find({
     userId: req.user.userId,
