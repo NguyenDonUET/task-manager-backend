@@ -63,6 +63,7 @@ const login = async (req, res) => {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Hết hạn sau 30 ngày
+    sameSite: true,
   })
 
   res.status(StatusCodes.OK).json({ msg: "Đăng nhập thành công!", accessToken })
