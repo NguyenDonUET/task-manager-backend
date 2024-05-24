@@ -17,8 +17,11 @@ app.use(cookieParser(process.env.JWT_REFRESH_TOKEN_SECRET))
 app.use(express.urlencoded({ extended: false }))
 app.use(
   cors({
-    // origin: "http://localhost:3000",
-    origin: "https://earnest-cobbler-6ebd0f.netlify.app",
+    // origin: ,
+    origin: [
+      "http://localhost:3000",
+      "https://earnest-cobbler-6ebd0f.netlify.app",
+    ],
     credentials: true,
   })
 )
