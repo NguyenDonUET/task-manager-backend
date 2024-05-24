@@ -9,6 +9,7 @@ const connectDB = require("./db/connect")
 //  routers
 const authRouter = require("./routes/authRoutes")
 const taskRouter = require("./routes/taskRoutes")
+const userRouter = require("./routes/usersRoutes")
 
 const app = express()
 app.use(express.json())
@@ -16,7 +17,8 @@ app.use(cookieParser(process.env.JWT_REFRESH_TOKEN_SECRET))
 app.use(express.urlencoded({ extended: false }))
 app.use(
   cors({
-    origin: "*",
+    // origin: "http://localhost:3000",
+    origin: "https://task-manager-reactjs.onrender.com",
     credentials: true,
   })
 )
@@ -24,6 +26,7 @@ app.use(
 // routes
 app.use("/api/v1/auth", authRouter)
 app.use("/api/v1/tasks", taskRouter)
+app.use("/api/v1/users", userRouter)
 
 app.use(errorHandlerMiddleware)
 

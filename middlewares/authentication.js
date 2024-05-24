@@ -7,19 +7,19 @@ const authenticateUser = async (req, res, next) => {
   const { refreshToken } = req.cookies
 
   if (!refreshToken) {
-    throw new CustomError(StatusCodes.UNAUTHORIZED, "No token provided")
+    throw new CustomError(StatusCodes.FORBIDDEN, "No token provided")
   }
+  isTokenValid(refreshToken, process.env.JWT_REFRESH_TOKEN_SECRET)
+
+  const authHeader = req.headers.authorization
+  let accessToken = ""
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    throw new CustomError(StatusCodes.BAD_REQUEST, "Access token is invalid")
+  }
+  accessToken = authHeader.substring(7)
+
   try {
-    isTokenValid(refreshToken, process.env.JWT_REFRESH_TOKEN_SECRET)
-
-    const authHeader = req.headers.authorization
-    let accessToken = ""
-
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      throw new CustomError(StatusCodes.UNAUTHORIZED, "Access token is invalid")
-    }
-    accessToken = authHeader.substring(7)
-
     const decodedToken = jwt.verify(
       accessToken,
       process.env.JWT_ACCESS_TOKEN_SECRET
@@ -32,8 +32,8 @@ const authenticateUser = async (req, res, next) => {
       email,
     }
     next()
-  } catch {
-    throw new CustomError(StatusCodes.UNAUTHORIZED, "Authentication Invalid")
+  } catch (error) {
+    throw new CustomError(StatusCodes.UNAUTHORIZED, "Access token is invalid")
   }
 }
 
