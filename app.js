@@ -18,7 +18,7 @@ app.use(express.urlencoded({ extended: false }))
 app.use(
   cors({
     // origin: "http://localhost:3000",
-    origin: "https://task-manager-reactjs.onrender.com",
+    origin: "https://earnest-cobbler-6ebd0f.netlify.app",
     credentials: true,
   })
 )
