@@ -35,7 +35,7 @@ const getTasks = async (req, res) => {
 
   const count = allTasks.length
   const numberInCompletedTasks = allTasks.filter(
-    (task) => task.status === Status.Pending
+    (task) => task.status === "pending"
   ).length
 
   res.status(StatusCodes.OK).json({
@@ -43,8 +43,8 @@ const getTasks = async (req, res) => {
     totalItems: count,
     currentPage: +page,
     pageSize: +limit,
-    tasks,
     numberInCompletedTasks,
+    tasks,
   })
 }
 
