@@ -1,19 +1,20 @@
-const { StatusCodes } = require("http-status-codes")
-const { attachCookiesToResponse, createTokenUser } = require("../utils")
-const User = require("../models/users.model")
-const { CustomError, BadRequestError } = require("../middlewares/error-handler")
-const { createTokenJWT, isTokenValid } = require("../utils/jwt")
+const { StatusCodes } = require('http-status-codes')
+const { attachCookiesToResponse, createTokenUser } = require('../utils')
+const User = require('../models/users.model')
+const { CustomError, BadRequestError } = require('../middlewares/error-handler')
+const { createTokenJWT, isTokenValid } = require('../utils/jwt')
+const { ms } = require('ms')
 
 const register = async (req, res) => {
   const { email, username, password } = req.body
 
   if (!email || !username || !password) {
-    throw new CustomError(StatusCodes.BAD_REQUEST, "Dữ liệu không hợp lệ")
+    throw new CustomError(StatusCodes.BAD_REQUEST, 'Dữ liệu không hợp lệ')
   }
 
   const emailAlreadyExists = await User.findOne({ email })
   if (emailAlreadyExists) {
-    throw new CustomError(StatusCodes.BAD_REQUEST, "Email này đã tồn tại")
+    throw new CustomError(StatusCodes.BAD_REQUEST, 'Email này đã tồn tại')
   }
 
   await User.create({
@@ -23,7 +24,7 @@ const register = async (req, res) => {
   })
 
   res.status(StatusCodes.CREATED).json({
-    msg: "Đăng ký thành công!",
+    msg: 'Đăng ký thành công!',
   })
 }
 
@@ -31,17 +32,17 @@ const login = async (req, res) => {
   const { email, password } = req.body
 
   if (!email || !password) {
-    throw new CustomError(StatusCodes.BAD_REQUEST, "Dữ liệu không hợp lệ")
+    throw new CustomError(StatusCodes.BAD_REQUEST, 'Dữ liệu không hợp lệ')
   }
   const user = await User.findOne({ email })
 
   if (!user) {
-    throw new CustomError(StatusCodes.BAD_REQUEST, "Tài khoản này chưa tồn tại")
+    throw new CustomError(StatusCodes.BAD_REQUEST, 'Tài khoản này chưa tồn tại')
   }
   const isPasswordCorrect = await user.comparePassword(password)
 
   if (!isPasswordCorrect) {
-    throw new CustomError(StatusCodes.BAD_REQUEST, "Mật khẩu không đúng")
+    throw new CustomError(StatusCodes.BAD_REQUEST, 'Mật khẩu không đúng')
   }
 
   const tokenUser = createTokenUser(user)
@@ -59,30 +60,47 @@ const login = async (req, res) => {
   })
 
   // Gửi refresh token qua cookie
-  res.cookie("refreshToken", refreshToken, {
+  res.cookie('refreshToken', refreshToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: process.env.NODE_ENV === 'production',
     expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Hết hạn sau 30 ngày
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+  })
+  res.cookie('accessToken', accessToken, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none', // 2 domain của FE và BE có thể ko cùng
+    expires: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000), // Hết hạn sau 1 ngày
   })
 
-  res.status(StatusCodes.OK).json({ msg: "Đăng nhập thành công!", accessToken })
+  res
+    .status(StatusCodes.OK)
+    .json({ msg: 'Đăng nhập thành công!', userInfo: tokenUser })
 }
 
 const logout = async (req, res) => {
-  res.cookie("refreshToken", "", {
+  res.cookie('refreshToken', '', {
     httpOnly: true,
     expires: new Date(Date.now()),
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+  })
+  res.cookie('accessToken', '', {
+    httpOnly: true,
+    expires: new Date(Date.now()),
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
   })
 
-  res.status(StatusCodes.OK).json({ msg: "user logged out!" })
+  res.status(StatusCodes.OK).json({ msg: 'user logged out!' })
 }
 
 const handleRefreshToken = async (req, res) => {
   const { refreshToken } = req.cookies
 
+  if (!refreshToken) {
+    throw new CustomError(StatusCodes.UNAUTHORIZED, 'refresh token invalid')
+  }
   const userInfo = isTokenValid(
     refreshToken,
     process.env.JWT_REFRESH_TOKEN_SECRET
@@ -90,7 +108,7 @@ const handleRefreshToken = async (req, res) => {
   const user = await User.findOne({ _id: userInfo.userId })
 
   if (!user) {
-    throw new CustomError(StatusCodes.UNAUTHORIZED, "refresh token vail")
+    throw new CustomError(StatusCodes.UNAUTHORIZED, 'refresh token invalid')
   }
   const tokenUser = createTokenUser(user)
   const accessToken = createTokenJWT({
@@ -105,15 +123,22 @@ const handleRefreshToken = async (req, res) => {
   })
 
   // Gửi refresh token qua cookie
-  res.cookie("refreshToken", newRefreshToken, {
+  res.cookie('refreshToken', newRefreshToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: process.env.NODE_ENV === 'production',
     expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Hết hạn sau 30 ngày
+    sameSite: 'none', // 2 domain của FE và BE có thể ko cùng
+  })
+  res.cookie('accessToken', accessToken, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none', // 2 domain của FE và BE có thể ko cùng
+    expires: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000), // Hết hạn sau 1 ngày
   })
 
   res.status(StatusCodes.OK).json({
-    msg: "refresh token success!",
-    accessToken,
+    msg: 'refresh token success!',
+    userInfo: tokenUser,
   })
 }
 

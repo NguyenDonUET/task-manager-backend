@@ -1,24 +1,14 @@
-const jwt = require("jsonwebtoken")
-const { StatusCodes } = require("http-status-codes")
-const { isTokenValid } = require("../utils")
-const { CustomError } = require("./error-handler")
+const jwt = require('jsonwebtoken')
+const { StatusCodes } = require('http-status-codes')
+const { isTokenValid } = require('../utils')
+const { CustomError } = require('./error-handler')
 
-const authenticateUser = async (req, res, next) => {
-  const { refreshToken } = req.cookies
+const isAuthorized = async (req, res, next) => {
+  const { accessToken } = req.cookies
 
-  if (!refreshToken) {
-    throw new CustomError(StatusCodes.FORBIDDEN, "No token provided")
+  if (!accessToken) {
+    throw new CustomError(StatusCodes.FORBIDDEN, 'No token provided')
   }
-  isTokenValid(refreshToken, process.env.JWT_REFRESH_TOKEN_SECRET)
-
-  const authHeader = req.headers.authorization
-  let accessToken = ""
-
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    throw new CustomError(StatusCodes.BAD_REQUEST, "Access token is invalid")
-  }
-  accessToken = authHeader.substring(7)
-
   try {
     const decodedToken = jwt.verify(
       accessToken,
@@ -33,22 +23,21 @@ const authenticateUser = async (req, res, next) => {
     }
     next()
   } catch (error) {
-    throw new CustomError(StatusCodes.UNAUTHORIZED, "Access token is invalid")
-  }
-}
-
-const authorizePermissions = (...roles) => {
-  return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
-      throw new CustomError.UnauthorizedError(
-        "Unauthorized to access this route"
-      )
+    console.log('Error from auth', error)
+    // TH accesstoken hết hạn
+    if (error.message?.includes('jwt expired')) {
+      return res
+        .status(StatusCodes.GONE)
+        .json({ message: 'access token expired!' })
     }
-    next()
+    // TH lỗi khác
+    return res
+      .status(StatusCodes.UNAUTHORIZED)
+      .json({ message: 'please login again' })
+    // throw new CustomError(StatusCodes.UNAUTHORIZED, 'Access token is invalid')
   }
 }
 
 module.exports = {
-  authenticateUser,
-  authorizePermissions,
+  isAuthorized,
 }
